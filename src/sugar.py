@@ -14,6 +14,7 @@
 #
 # Copyright 2007, Creative Commons, www.creativecommons.org.
 # Copyright 2007, Scott Shawcroft.
+from gettext import gettext as _
 
 import liblicense as ll
 import gtk
@@ -23,6 +24,8 @@ from sugar.graphics.icon import Icon
 from sugar.graphics.xocolor import XoColor
 from sugar.graphics.canvasicon import CanvasIcon
 from sugar.graphics.palette import Palette
+from sugar.graphics.toolbutton import ToolButton
+from sugar import profile
 
 class LicenseWidget:
     """ Provides generic license widget funcitonalities.
@@ -36,18 +39,9 @@ class LicenseWidget:
                 ("http://creativecommons.org/licenses/by-nc-sa/3.0/","cc-by-nc-sa"),
                 ("http://creativecommons.org/licenses/by-nc-nd/3.0/","cc-by-nc-nd"))
                 
-    def __init__(self,jobject,default_colors="#000000,#000000"):
-        self._jobject = jobject
+    def __init__(self,default_colors="#000000,#000000"):
         self._default_colors = default_colors
         self.register_icon_size()
-    
-    def load_license(self):
-        license = ll.read(self._jobject.get_file_path())
-        default = False
-        if not license:
-            license = ll.get_default()
-            default=True
-        return (default,license)
     
     def get_icon(self,license):
         if license and license in map(lambda x: x[0],self._licenses):
@@ -56,16 +50,8 @@ class LicenseWidget:
             current_icon = "cc-by"
         return current_icon
     
-    def get_icon_color(self,default):
-        if default:
-            color = XoColor(self._default_colors)
-        else:
-            color = XoColor(self._jobject.metadata['icon-color'])
-        return color
-    
     def _license_cb(self,widget,uri):
-        print self._jobject.get_file_path(),license
-        print ll.write(self._jobject.get_file_path(),license)
+        raise NotImplementedError
 
     def make_menu(self,palette,color,color_selected,current_icon):
         for uri, icon_name in self._licenses:
@@ -94,11 +80,11 @@ class LicenseWidget:
 
 class CanvasLicense(LicenseWidget,CanvasIcon):
     def __init__(self,jobject,menu=True):
-        LicenseWidget.__init__(self,jobject)
+        LicenseWidget.__init__(self)
+        self._jobject = jobject
         default, license = self.load_license()
         color = self.get_icon_color(default)
         icon_name = self.get_icon(license)
-        
         CanvasIcon.__init__(self,icon_name="theme:"+icon_name,
                                 xalign=hippo.ALIGNMENT_END,
                                 scale=self.ICON_SCALE)
@@ -110,3 +96,55 @@ class CanvasLicense(LicenseWidget,CanvasIcon):
             palette = self.get_palette()
             self.make_menu(palette,XoColor("#ffffff,#ffffff"),XoColor(self._jobject.metadata['icon-color']),icon_name)
             palette.props.position = Palette.BOTTOM
+    
+    def get_icon_color(self,default):
+        if default:
+            color = XoColor(self._default_colors)
+        else:
+            color = XoColor(self._jobject.metadata['icon-color'])
+        return color
+        
+    def load_license(self):
+        license = ll.read(self._jobject.get_file_path())
+        default = False
+        if not license:
+            license = ll.get_default()
+            default=True
+        return (default,license)
+
+    def _license_cb(self,widget,uri):
+        print self._jobject.get_file_path(),uri
+        print ll.write(self._jobject.get_file_path(),uri)
+
+class LicenseToolButton(LicenseWidget,ToolButton):
+    def __init__(self,jobject=None):
+        LicenseWidget.__init__(self,"#ffffff,#ffffff")
+        self._jobject = jobject
+        if jobject:
+            license = ll.read(self._jobject.get_file_path())
+            color_selected = XoColor(self._jobject.metadata['icon-color'])
+        else:
+            license = ll.get_default()
+            color_selected = profile.get_color()
+        icon = self.get_icon(license)
+        ToolButton.__init__(self,icon,self._icon_size)
+        self.props.sensitive = True
+        self.set_tooltip(_("Current")+": "+ll.get_name(license))
+        self.make_menu(self.get_palette(),XoColor("#ffffff,#ffffff"),color_selected,icon)
+    
+    def _license_cb(self,widget,uri):
+        if not self._jobject:
+            ll.set_default(uri)
+        else:
+            ll.write(self._jobject.get_file_path(),uri)
+
+class LicenseToolbar(gtk.Toolbar):
+    __gtype_name__ = 'LicenseToolbar'
+    def __init__(self):
+        gtk.Toolbar.__init__(self)
+        self._license = LicenseToolButton()
+        self.insert(self._license, -1)
+        self._license.show()
+
+    def _change_license_cb(self,widget,uri):
+        print uri
