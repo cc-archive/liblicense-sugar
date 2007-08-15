@@ -43,7 +43,7 @@ class LicenseWidget:
         self._default_colors = default_colors
         self.register_icon_size()
     
-    def get_icon(self,license):
+    def uri_to_icon(self,license):
         if license and license in map(lambda x: x[0],self._licenses):
             current_icon = "cc-" + license.split("/")[4]
         else:
@@ -51,6 +51,9 @@ class LicenseWidget:
         return current_icon
     
     def _license_cb(self,widget,uri):
+        raise NotImplementedError
+    
+    def refresh(self,uri):
         raise NotImplementedError
 
     def make_menu(self,palette,color,color_selected,current_icon):
@@ -82,9 +85,10 @@ class CanvasLicense(LicenseWidget,CanvasIcon):
     def __init__(self,jobject,menu=True):
         LicenseWidget.__init__(self)
         self._jobject = jobject
-        default, license = self.load_license()
-        color = self.get_icon_color(default)
-        icon_name = self.get_icon(license)
+        self._menu = menu
+        self._default, license = self.load_license()
+        color = self.get_icon_color(self._default)
+        icon_name = self.uri_to_icon(license)
         CanvasIcon.__init__(self,icon_name="theme:"+icon_name,
                                 xalign=hippo.ALIGNMENT_END,
                                 scale=self.ICON_SCALE)
@@ -113,8 +117,19 @@ class CanvasLicense(LicenseWidget,CanvasIcon):
         return (default,license)
 
     def _license_cb(self,widget,uri):
-        print self._jobject.get_file_path(),uri
-        print ll.write(self._jobject.get_file_path(),uri)
+        ll.write(self._jobject.get_file_path(),uri)
+        self.refresh(uri)
+    
+    def refresh(self,uri):
+        icon_name = self.uri_to_icon(uri)
+        self.props.icon_name = "theme:"+icon_name
+        self._default = False
+        self.props.xo_color = self.get_icon_color(False)
+        self.set_tooltip(ll.get_name(uri))
+        if self._menu:
+            palette = self.get_palette()
+            self.make_menu(palette,XoColor("#ffffff,#ffffff"),XoColor(self._jobject.metadata['icon-color']),icon_name)
+            palette.props.position = Palette.BOTTOM
 
 class LicenseToolButton(LicenseWidget,ToolButton):
     def __init__(self,jobject=None):
@@ -122,21 +137,30 @@ class LicenseToolButton(LicenseWidget,ToolButton):
         self._jobject = jobject
         if jobject:
             license = ll.read(self._jobject.get_file_path())
-            color_selected = XoColor(self._jobject.metadata['icon-color'])
+            self._color_selected = XoColor(self._jobject.metadata['icon-color'])
         else:
             license = ll.get_default()
-            color_selected = profile.get_color()
-        icon = self.get_icon(license)
+            self._color_selected = profile.get_color()
+        icon = self.uri_to_icon(license)
         ToolButton.__init__(self,icon,self._icon_size)
+        self.get_icon_widget().props.xo_color = XoColor("#ffffff,#ffffff")
         self.props.sensitive = True
         self.set_tooltip(_("Current")+": "+ll.get_name(license))
-        self.make_menu(self.get_palette(),XoColor("#ffffff,#ffffff"),color_selected,icon)
+        self.make_menu(self.get_palette(),XoColor("#ffffff,#ffffff"),self._color_selected,icon)
     
     def _license_cb(self,widget,uri):
         if not self._jobject:
             ll.set_default(uri)
         else:
             ll.write(self._jobject.get_file_path(),uri)
+        self.refresh(uri)
+    
+    def refresh(self,uri):
+        icon = self.uri_to_icon(uri)
+        self.set_icon(icon,self._icon_size)
+        self.get_icon_widget().props.xo_color = XoColor("#ffffff,#ffffff")
+        self.set_tooltip(_("Current")+": "+ll.get_name(uri))
+        self.make_menu(self.get_palette(),XoColor("#ffffff,#ffffff"),self._color_selected,icon)
 
 class LicenseToolbar(gtk.Toolbar):
     __gtype_name__ = 'LicenseToolbar'
@@ -145,6 +169,3 @@ class LicenseToolbar(gtk.Toolbar):
         self._license = LicenseToolButton()
         self.insert(self._license, -1)
         self._license.show()
-
-    def _change_license_cb(self,widget,uri):
-        print uri
