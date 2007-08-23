@@ -34,7 +34,8 @@ class LicenseWidget:
     """
     ICON_SCALE = 2
     
-    _licenses = (("http://creativecommons.org/licenses/by/3.0/","cc-by"),
+    _licenses = ((None,"no-license"),
+                ("http://creativecommons.org/licenses/by/3.0/","cc-by"),
                 ("http://creativecommons.org/licenses/by-sa/3.0/","cc-by-sa"),
                 ("http://creativecommons.org/licenses/by-nd/3.0/","cc-by-nd"),
                 ("http://creativecommons.org/licenses/by-nc/3.0/","cc-by-nc"),
@@ -52,7 +53,7 @@ class LicenseWidget:
         if license and license in map(lambda x: x[0],self._licenses):
             current_icon = "cc-" + license.split("/")[4]
         else:
-            current_icon = "cc-by"
+            current_icon = "no-license"
         return current_icon
     
     def _license_cb(self,widget,uri):
@@ -76,18 +77,18 @@ class LicenseWidget:
                 license = ll.read(self._jobject.file_path)
             if license:
                 return (False,license)
-        return (True,ll.get_default())
+        license=ll.get_default()
+        return (True,license)
 
     def make_menu(self,palette,color,color_selected,current_icon):
         for uri, icon_name in self._licenses:
             tmp = gtk.HBox()
             tmp.show()
-            icon = Icon(icon_name,self._icon_size)
             if current_icon==icon_name:
-                icon.props.xo_color = color_selected
+                xo_color = color_selected
             else:
-                icon.props.xo_color = color
-            
+                xo_color = color
+            icon = Icon(icon_name,icon_size=self._icon_size,xo_color=xo_color)
             icon.show()
             tmp.pack_start(icon,False,False)
             item = gtk.MenuItem()
@@ -101,6 +102,13 @@ class LicenseWidget:
         if self._icon_size==0:
             self._icon_size = gtk.icon_size_register("license-icon-size", int(76*self.ICON_SCALE), int(21*self.ICON_SCALE))
         return self._icon_size
+    
+    def _format_tooltip(self,uri):
+        if uri:
+            s = _("Current")+": "+ll.get_name(uri)
+        else:
+            s = _("Current")+": "+_("None")
+        return s
         
 
 class CanvasLicense(LicenseWidget,CanvasIcon):
@@ -109,13 +117,14 @@ class CanvasLicense(LicenseWidget,CanvasIcon):
         self._menu = menu
         self._default, license = self.load_license()
         color = self.get_icon_color(self._default)
+        
         icon_name = self.uri_to_icon(license)
         CanvasIcon.__init__(self,icon_name="theme:"+icon_name,
                                 xalign=hippo.ALIGNMENT_END,
                                 scale=self.ICON_SCALE)
 
         self.props.xo_color = color
-        self.set_tooltip(ll.get_name(license))
+        self.set_tooltip(self._format_tooltip(license))
         
         if menu:
             palette = self.get_palette()
@@ -135,7 +144,7 @@ class CanvasLicense(LicenseWidget,CanvasIcon):
         icon_name = self.uri_to_icon(uri)
         self.props.icon_name = "theme:"+icon_name
         self.props.xo_color = self.get_icon_color(self._default)
-        self.set_tooltip(ll.get_name(uri))
+        self.set_tooltip(self._format_tooltip(uri))
         if self._menu:
             palette = self.get_palette()
             self.make_menu(palette,XoColor("#ffffff,#ffffff"),XoColor(self._jobject.metadata['icon-color']),icon_name)
@@ -150,20 +159,23 @@ class LicenseToolButton(LicenseWidget,ToolButton):
         else:
             self._color_selected = profile.get_color()
         default, license = self.load_license()
-        icon = self.uri_to_icon(license)
-        ToolButton.__init__(self,icon,self._icon_size)
-        self.get_icon_widget().props.xo_color = XoColor("#ffffff,#ffffff")
+        icon_name = self.uri_to_icon(license)
+        ToolButton.__init__(self)
+        icon = Icon(icon_name,icon_size=self._icon_size,xo_color=XoColor("#ffffff,#ffffff"))
+        icon.show()
+        self.set_icon_widget(icon)
         self.props.sensitive = True
-        self.set_tooltip(_("Current")+": "+ll.get_name(license))
-        self.make_menu(self.get_palette(),XoColor("#ffffff,#ffffff"),self._color_selected,icon)
+        self.set_tooltip(self._format_tooltip(license))
+        self.make_menu(self.get_palette(),XoColor("#ffffff,#ffffff"),self._color_selected,icon_name)
     
     def refresh(self,widget=None):
-        logging.debug(str(widget))
         default, uri = self.load_license()
-        icon = self.uri_to_icon(uri)
-        self.set_icon(icon,self._icon_size)
-        self.get_icon_widget().props.xo_color = XoColor("#ffffff,#ffffff")
-        self.set_tooltip(_("Current")+": "+ll.get_name(uri))
+        icon_name = self.uri_to_icon(uri)
+        logging.debug("Refreshing ToolButton Icon")
+        icon = Icon(icon_name,icon_size=self._icon_size,xo_color=XoColor("#ffffff,#ffffff"))
+        icon.show()
+        self.set_icon_widget(icon)
+        self.set_tooltip(self._format_tooltip(uri))
         self.make_menu(self.get_palette(),XoColor("#ffffff,#ffffff"),self._color_selected,icon)
 
 class LicenseToolbar(gtk.Toolbar):

@@ -1,0 +1,79 @@
+diff --git a/collapsedentry.py b/collapsedentry.py
+index f3d6cb9..7497568 100644
+--- a/collapsedentry.py
++++ b/collapsedentry.py
+@@ -27,6 +27,11 @@ from sugar.graphics import style
+ from sugar.date import Date
+ from sugar.datastore import datastore
+ 
++#liblicense import
++from sugar.graphics.license import CanvasLicense
++#alternative import
++# from liblicense.sugar import CanvasLicense
++
+ from journalentry import JournalEntry
+ from buddylist import BuddyList
+ 
+@@ -56,6 +61,9 @@ class CollapsedEntry(JournalEntry):
+                                        font_desc=style.FONT_BOLD.get_pango_desc(),
+                                        size_mode=hippo.CANVAS_SIZE_WRAP_WORD)
+         self.frame.append(self._title)
++        
++        self._license = CanvasLicense(self._jobject,False)
++        self.frame.append(self._license)
+ 
+         if self.jobject.metadata.has_key('buddies') and self.jobject.metadata['buddies']:
+             with_label = hippo.CanvasText(text=_('with:'),
+diff --git a/expandedentry.py b/expandedentry.py
+index b029181..604dfe0 100644
+--- a/expandedentry.py
++++ b/expandedentry.py
+@@ -32,6 +32,11 @@ from sugar.graphics.combobox import ComboBox
+ from sugar import activity
+ from sugar.datastore import datastore
+ 
++#liblicense import
++from sugar.graphics.license import CanvasLicense
++#alternative import
++# from liblicense.sugar import CanvasLicense
++
+ from journalentry import JournalEntry
+ from tagbox import TagBox
+ 
+@@ -117,6 +122,9 @@ class ExpandedEntry(JournalEntry):
+         self._update_color()
+         hbox.append(self._title)
+ 
++        self._license = CanvasLicense(self._jobject)
++        hbox.append(self._license)
++
+         return hbox
+ 
+     def _build_body_box(self):
+diff --git a/journaltoolbox.py b/journaltoolbox.py
+index d708e92..440d163 100644
+--- a/journaltoolbox.py
++++ b/journaltoolbox.py
+@@ -35,6 +35,11 @@ from sugar import activity
+ from sugar.objects import objecttype
+ from sugar.datastore import datastore
+             
++#liblicense import
++from sugar.graphics.license import LicenseToolbar
++#alternative import
++# from liblicense.sugar import LicenseToolbar
++
+ class JournalToolbox(Toolbox):
+     def __init__(self):
+         Toolbox.__init__(self)
+@@ -51,6 +56,10 @@ class JournalToolbox(Toolbox):
+         self.add_toolbar(_('Backup'), self.backup_toolbar)
+         self.backup_toolbar.show()
+         
++        self.share_toolbar = LicenseToolbar()
++        self.add_toolbar(_('Share'), self.share_toolbar)
++        self.share_toolbar.show()
++        
+         #self.create_toolbar = CreateToolbar()
+         #self.add_toolbar(_('Create'), self.create_toolbar)
+         #self.create_toolbar.show()

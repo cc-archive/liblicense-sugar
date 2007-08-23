@@ -1,0 +1,6 @@
+## Install to jhbuild ##
+1) Copy icons to source/journal-activity/icons/
+2) cd to source/journal-activity/icons/
+3) Foreach icon run 'git add <icon>' where <icon> is replaced with the filename.
+4) Commit it locally 'git commit -a' with some sort of message.
+5) Rebuild the journal with './sugar-jhbuild buildone journal-activity'.

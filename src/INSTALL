@@ -1,0 +1,7 @@
+## Install to jhbuild ##
+1) To install this file into a jhbuild copy it to source/sugar/sugar/graphics/ as license.py.
+2) Modify the Makefile.am in that directory adding license.py to the end of the sugar_PYTHON list (currently the only list).
+3) Rebuild sugar with ./sugar-jhbuild buildone sugar.
+4) Use it.
+
+Note: The icons must also be added onto the jhbuild.  I put them into source/journal-activity/icons/, added them all into git and rebuilt journal-activity similar to above.  More detailed instrucitions are in ../icons/INSTALL.

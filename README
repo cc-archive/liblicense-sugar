@@ -1,0 +1,5 @@
+This stuff only depends on the liblicense core library.  It only requires that you have a config module (usually flat_file), the license files and the python bindings.  All other modules are unused.
+
+The rpm is available here: http://downloads.sourceforge.net/cctools/liblicense-0.4-1.i386.rpm.
+
+It will require dependencies for all modules but you can ignore them with --nodeps just make sure you have python and sqlite. (They are both included on the olpc at the moment.)

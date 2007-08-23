@@ -1,0 +1,10 @@
+## Install to jhbuild ##
+To install it do these two things in any order.
+
+*) Follow the instructions in src/INSTALL and icons/INSTALL.
+
+*) Patch the journal.
+	1) Move to source/journal-activity/
+	2) Run 'patch -p1 -i <patch_location>/journal.patch' replacing <patch_location> with the patch location.
+	3) Move to the jhbuild root. (../../)
+	4) Rebuild the journal activity with './sugar-jhbuild buildone journal-activity'
